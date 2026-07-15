@@ -243,10 +243,29 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 document.getElementById('btn-signup').addEventListener('click', async () => {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
-  if (!email || !password) { alert('Inserisci email e password per registrarti.'); return; }
+  const errEl = document.getElementById('err-login');
+  errEl.classList.add('hidden');
+
+  if (!email || !password) {
+    errEl.textContent = 'Inserisci email e password per registrarti.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
   const { ok, data } = await apiCall('/api/auth.php', 'POST', { action: 'signup', email, password });
-  alert(ok ? (data.message || 'Registrazione effettuata. Controlla la tua email.') : (data.error || 'Registrazione fallita'));
+
+  if (!ok) {
+    errEl.textContent = data.error || 'Registrazione fallita';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  if (data.session) {
+    // Conferma email disattivata su Supabase: l'utente è già loggato, si procede subito
+    await submitAppointment({ name: data.user.name, phone: 'N/D', email: data.user.email, userId: data.user.id });
+  } else {
+    alert(data.message || 'Registrazione effettuata. Controlla la tua email.');
+  }
 });
 
 document.getElementById('guest-form').addEventListener('submit', async (e) => {

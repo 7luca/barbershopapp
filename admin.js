@@ -95,13 +95,13 @@ async function loadAppointments(scope = 'upcoming', date = '') {
   tbody.innerHTML = appts.map(a => {
     const slot = a.slots || {};
     return `<tr>
-      <td>${slot.slot_date || '—'}</td>
-      <td>${(slot.slot_time || '').slice(0,5)}</td>
-      <td>${escapeHtml(a.customer_name)}</td>
-      <td>${escapeHtml(a.service || '—')}</td>
-      <td>${escapeHtml(a.customer_phone)}</td>
-      <td>${escapeHtml(a.customer_email || '—')}</td>
-      <td>${escapeHtml(a.notes || '—')}</td>
+      <td data-label="Data">${slot.slot_date || '—'}</td>
+      <td data-label="Orario">${(slot.slot_time || '').slice(0,5)}</td>
+      <td data-label="Cliente">${escapeHtml(a.customer_name)}</td>
+      <td data-label="Servizio">${escapeHtml(a.service || '—')}</td>
+      <td data-label="Telefono">${escapeHtml(a.customer_phone)}</td>
+      <td data-label="Email">${escapeHtml(a.customer_email || '—')}</td>
+      <td data-label="Note">${escapeHtml(a.notes || '—')}</td>
     </tr>`;
   }).join('');
 }

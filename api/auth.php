@@ -27,7 +27,22 @@ if ($action === 'signup') {
         exit;
     }
 
-    echo json_encode(['success' => true, 'message' => 'Registrazione effettuata. Controlla la tua email per confermare.']);
+    // Se "Confirm email" è disattivato su Supabase, la risposta include già un access_token:
+    // l'utente è di fatto loggato e può procedere subito con la prenotazione.
+    if (isset($data['access_token']) && isset($data['user'])) {
+        echo json_encode([
+            'success' => true,
+            'session' => true,
+            'user' => [
+                'id' => $data['user']['id'],
+                'email' => $data['user']['email'],
+                'name' => explode('@', $email)[0]
+            ]
+        ]);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'session' => false, 'message' => 'Registrazione effettuata. Controlla la tua email per confermare, poi accedi.']);
     exit;
 }
 
