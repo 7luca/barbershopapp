@@ -1,88 +1,47 @@
-# Barber Shop App — Versione PHP + Vercel
+# Barber Shop App — v2 (nuovo design + orari settimanali)
 
-Il database Supabase (tabelle + RLS) resta quello già creato in precedenza: **non serve rifare nulla lì**.
+## Cosa è cambiato rispetto alla versione precedente
+- **Design**: nuovo tema scuro/oro, calendario visuale, servizio e note nella prenotazione.
+- **Orari**: invece di aggiungere manualmente ogni slot per ogni data, ora configuri un
+  **template settimanale** (tab "Orari Apertura") che genera automaticamente gli slot
+  quando un cliente (o tu in "Disponibilità") apre una certa data per la prima volta.
+- **Disponibilità**: puoi chiudere singoli slot o un'intera giornata per una data specifica,
+  senza toccare il template settimanale.
+- **iCal cliente**: dopo la conferma, il cliente ha un pulsante "Aggiungi al tuo calendario"
+  per la sua singola prenotazione (oltre al feed admin con tutte le prenotazioni, invariato).
+- **Autenticazione invariata**: codice di accesso per i clienti, guest o login/registrazione,
+  login admin con email+password (tabella `admins` su Supabase, come prima).
 
-Cambia solo il modo in cui il sito parla con Supabase: ora lo fa un backend PHP (in `/api`),
-non più il browser direttamente. Frontend statico invariato nell'aspetto.
+## 1. Migrazione database
+Vai su Supabase → SQL Editor → New Query, incolla ed esegui **`supabase_migration_v2.sql`**.
+Le tabelle esistenti (`settings`, `slots`, `appointments`, `admins`) restano intatte:
+questo script aggiunge solo nuove colonne (`slots.is_open`, `appointments.service`,
+`appointments.notes`) e la nuova tabella `business_hours` con i default già precompilati
+(Lun–Ven 9–13/15–19, Sab 9–13/15–17).
 
-## 1. Variabili d'ambiente su Vercel
-Vai su **Vercel → il tuo progetto → Settings → Environment Variables** e aggiungi:
+## 2. Environment Variables su Vercel
+Restano le stesse di prima — nessuna nuova variabile richiesta:
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `ICAL_SECRET_TOKEN`.
 
-| Nome | Valore | Dove trovarlo |
-|---|---|---|
-| `SUPABASE_URL` | `https://TUO-PROGETTO.supabase.co` | Supabase → Project Settings → API |
-| `SUPABASE_ANON_KEY` | la anon public key | Supabase → Project Settings → API |
-| `SUPABASE_SERVICE_KEY` | la **service_role** key (segreta!) | Supabase → Project Settings → API |
-| `ICAL_SECRET_TOKEN` | una stringa a caso, lunga e casuale | generala tu (es. da un password manager) |
+## 3. Aggiorna il token iCal nel codice
+In `admin.js`, cerca `ICAL_TOKEN` e sostituiscilo con lo stesso valore di `ICAL_SECRET_TOKEN`.
 
-⚠️ `SUPABASE_SERVICE_KEY` bypassa tutte le RLS: non deve MAI arrivare al browser.
-Qui resta solo lato server (dentro le funzioni PHP), quindi è sicura.
-
-Dopo aver aggiunto le variabili, fai un **redeploy** del progetto perché vengano applicate.
-
-## 2. Aggiorna il token iCal nel codice
-Apri `admin.js` e sostituisci:
-```javascript
-const ICAL_TOKEN = 'INSERISCI-QUI-LA-STESSA-STRINGA-SEGRETA';
-```
-con lo stesso valore che hai messo in `ICAL_SECRET_TOKEN` su Vercel.
-
-## 3. Deploy
-Dato che Vercel è già collegato al tuo GitHub:
+## 4. Deploy
 ```bash
-git init
 git add .
-git commit -m "Versione PHP su Vercel"
-git branch -M main
-git remote add origin https://github.com/7luca/barbershopapp.git
-git push -u origin main
+git commit -m "v2: nuovo design + orari settimanali + iCal cliente"
+git push
 ```
-Poi su Vercel: **Add New → Project → Import** il repo (se non l'hai già collegato) — il deploy parte da solo grazie a `vercel.json`.
+Vercel farà il deploy automaticamente.
 
-Ad ogni push su `main`, Vercel farà il deploy automaticamente.
+## 5. Personalizzare gli orari
+Vai su `/admin.html` → tab **Orari Apertura**, seleziona un giorno della settimana,
+clicca sugli slot per attivarli/disattivarli, oppure aggiungine di nuovi con l'orario custom.
+Il tab **Disponibilità** ti permette invece di chiudere un giorno o uno slot specifico
+(es. per una data di ferie), senza cambiare il template settimanale.
 
-## 4. Crea l'utente admin (se non l'hai già fatto)
-Su Supabase → Authentication → Users → Add User, poi:
-```sql
-insert into admins (user_id) values ('UUID-DEL-TUO-UTENTE');
-```
-
-## 5. Test
-- Apri `https://TUO-PROGETTO.vercel.app`, inserisci il codice di accesso.
-- Vai su `/admin.html`, fai login, apri qualche slot.
-- Prova una prenotazione da `index.html` e verifica che compaia in dashboard.
-- Copia il link iCal e iscrivilo su iPhone/Mac.
-
-## Struttura file
-```
-barbershop-php/
-├── index.html              # Frontend cliente (statico)
-├── admin.html               # Dashboard barbiere (statico)
-├── style.css                 # Stile condiviso
-├── app.js                     # Logica cliente → chiama /api/*.php
-├── admin.js                  # Logica admin → chiama /api/*.php
-├── vercel.json                # Config runtime PHP
-└── api/
-    ├── config.php             # Legge le env vars
-    ├── supabase.php          # Helper cURL verso Supabase REST/Auth
-    ├── check-access.php     # Verifica codice di accesso
-    ├── get-slots.php          # Slot disponibili per una data
-    ├── create-appointment.php # Salva una prenotazione
-    ├── auth.php                # Login/signup cliente
-    ├── admin-login.php       # Login admin (imposta cookie httpOnly)
-    ├── admin-check.php       # Verifica sessione admin
-    ├── admin-logout.php     # Elimina il cookie
-    ├── admin-slots.php       # Elenco/creazione slot (admin)
-    ├── admin-delete-slot.php # Eliminazione slot (admin)
-    ├── admin-appointments.php # Elenco prenotazioni (admin)
-    └── ical.php                 # Feed .ics per Apple Calendar
-```
-
-## Note tecniche importanti
-- **Niente `$_SESSION` PHP**: Vercel è serverless, ogni richiesta può girare su un'istanza diversa,
-  quindi le sessioni file-based non sono affidabili. L'autenticazione admin usa invece un
-  **cookie httpOnly** con l'access_token di Supabase, verificato ad ogni richiesta.
-- Il cookie scade dopo ~1 ora (durata del token Supabase): se l'admin resta loggato più a lungo,
-  dovrà rifare il login. Per un uso quotidiano da parte di un singolo barbiere è sufficiente;
-  se vuoi sessioni più lunghe, si può implementare il refresh_token in un secondo momento.
-- Il database e le RLS **non sono stati toccati**: restano quelli già funzionanti.
+## Nota sul file caricato
+Nel tuo `index.html` originale, le sezioni hero/servizi/footer erano racchiuse dentro
+un unico commento HTML (il tag `<!--` si apre prima dell'header e si chiude solo dopo il
+footer), quindi non venivano renderizzate. Le ho lasciate fuori per coerenza con quel file;
+se le vuoi visibili, dimmelo e le riattivo — bastano pochi minuti.

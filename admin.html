@@ -1,64 +1,191 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Barber Shop</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber & Co. — Area Barbiere</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="admin-body">
 
-  <main class="container">
+    <!-- ── LOGIN ── -->
+    <div id="login-screen" class="admin-login">
+        <div class="admin-login__card">
+            <div class="admin-login__logo">✦ Barber & Co.</div>
+            <p class="admin-login__subtitle">Area Riservata Barbiere</p>
+            <div class="admin-login__form">
+                <input type="email" id="login-email" placeholder="Email" autocomplete="username" />
+                <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+                <p class="admin-login__error" id="login-error"></p>
+                <button class="btn btn--primary btn--full" id="login-btn">Accedi →</button>
+            </div>
+            <p style="text-align:center;margin-top:20px">
+                <a href="index.html" style="font-size:.8rem;color:var(--text-muted)">← Torna al sito</a>
+            </p>
+        </div>
+    </div>
 
-    <!-- LOGIN ADMIN -->
-    <section id="admin-login" class="step active">
-      <h1>Area Riservata</h1>
-      <form id="admin-login-form">
-        <input type="email" id="admin-email" placeholder="Email" required>
-        <input type="password" id="admin-password" placeholder="Password" required>
-        <button type="submit">Accedi</button>
-      </form>
-      <p id="admin-login-error" class="error-msg"></p>
-    </section>
+    <!-- ── DASHBOARD ── -->
+    <div id="admin-panel" class="hidden">
 
-    <!-- DASHBOARD -->
-    <section id="admin-dashboard" class="step">
-      <nav class="admin-nav">
-        <h1>Dashboard</h1>
-        <button id="btn-logout" class="secondary outline">Esci</button>
-      </nav>
+        <header class="admin-header">
+            <div class="admin-header__logo">✦ Barber & Co.</div>
+            <div class="admin-header__user">
+                <span id="admin-date-display"></span>
+                <button class="admin-header__logout" id="logout-btn">Esci</button>
+            </div>
+        </header>
 
-      <div class="grid">
-        <!-- Gestione slot -->
-        <article>
-          <h2>Apri nuovi orari</h2>
-          <input type="date" id="admin-date-picker">
-          <input type="time" id="admin-time-picker">
-          <button id="btn-add-slot">Aggiungi slot</button>
-          <p id="add-slot-msg" class="error-msg"></p>
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="bookings">📋 Prenotazioni</button>
+            <button class="admin-tab" data-tab="availability">📅 Disponibilità</button>
+            <button class="admin-tab" data-tab="hours">🕐 Orari Apertura</button>
+        </div>
 
-          <h3>Slot per la data selezionata</h3>
-          <div id="admin-slots-list"></div>
-        </article>
+        <main class="admin-main">
 
-        <!-- Prenotazioni -->
-        <article>
-          <h2>Prenotazioni ricevute</h2>
-          <div id="appointments-list"></div>
-        </article>
-      </div>
+            <!-- TAB 1: PRENOTAZIONI -->
+            <div id="tab-bookings" class="tab-panel">
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-card__value" id="stat-total">—</div>
+                        <div class="stat-card__label">Totale Prenotazioni</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__value" id="stat-today">—</div>
+                        <div class="stat-card__label">Oggi</div>
+                    </div>
+                </div>
 
-      <article class="ical-box">
-        <h2>Sincronizza con Apple Calendar</h2>
-        <p class="subtitle">Copia questo link e aggiungilo come "Calendario da URL" su iPhone/Mac:</p>
-        <input type="text" id="ical-link" readonly>
-        <button id="btn-copy-ical" class="secondary">Copia link</button>
-      </article>
-    </section>
+                <div class="admin-toolbar">
+                    <input type="date" id="filter-date" title="Filtra per data" />
+                    <button class="btn btn--outline" id="filter-btn" style="padding:10px 20px;font-size:.9rem">Filtra</button>
+                    <button class="btn btn--outline" id="upcoming-btn" style="padding:10px 20px;font-size:.9rem">Prossimi</button>
+                    <button class="btn btn--outline" id="all-btn" style="padding:10px 20px;font-size:.9rem">Tutti</button>
+                </div>
 
-  </main>
+                <div id="table-loading" class="hidden" style="text-align:center;padding:40px;color:var(--text-muted)">
+                    <div class="spinner" style="margin:0 auto 12px"></div>
+                    <p>Caricamento...</p>
+                </div>
+                <div id="table-error" class="hidden slots-error" style="margin-bottom:16px"></div>
 
-  <script src="admin.js"></script>
+                <div class="admin-table-wrap" id="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Orario</th>
+                                <th>Cliente</th>
+                                <th>Servizio</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-tbody">
+                            <tr><td colspan="7" class="admin-empty">Caricamento...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="ical-banner">
+                    <div class="ical-banner__icon">📅</div>
+                    <div class="ical-banner__content">
+                        <div class="ical-banner__title">Sincronizza con Apple Calendar</div>
+                        <div class="ical-banner__text">
+                            Su iPhone: <strong>Impostazioni → Calendario → Account → Aggiungi account → Altro → Aggiungi calendario sottoscritto</strong>
+                        </div>
+                        <div class="ical-banner__url">
+                            <code id="ical-url">Caricamento...</code>
+                            <button class="btn btn--outline" id="copy-ical-btn" style="padding:8px 16px;font-size:.8rem;white-space:nowrap">📋 Copia URL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: DISPONIBILITÀ -->
+            <div id="tab-availability" class="tab-panel hidden">
+                <div class="avail-layout">
+                    <div class="avail-cal-col">
+                        <h3 class="avail-section-title">Seleziona un giorno</h3>
+                        <div class="avail-calendar" id="avail-calendar">
+                            <div class="calendar__nav">
+                                <button class="calendar__btn" id="avail-cal-prev">‹</button>
+                                <span class="calendar__title" id="avail-cal-title"></span>
+                                <button class="calendar__btn" id="avail-cal-next">›</button>
+                            </div>
+                            <div class="calendar__days-header">
+                                <span>Lun</span><span>Mar</span><span>Mer</span>
+                                <span>Gio</span><span>Ven</span><span>Sab</span>
+                                <span class="calendar__sun">Dom</span>
+                            </div>
+                            <div class="calendar__grid" id="avail-cal-grid"></div>
+                        </div>
+                        <div class="avail-legend">
+                            <div class="avail-legend__item"><span class="avail-legend__dot avail-dot--open"></span> Aperto</div>
+                            <div class="avail-legend__item"><span class="avail-legend__dot avail-dot--closed"></span> Giorno chiuso</div>
+                            <div class="avail-legend__item"><span class="avail-legend__dot avail-dot--partial"></span> Slot parzialmente bloccati</div>
+                        </div>
+                    </div>
+
+                    <div class="avail-detail-col" id="avail-detail-col">
+                        <div class="avail-placeholder">
+                            <p>← Seleziona un giorno dal calendario</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: ORARI DI APERTURA -->
+            <div id="tab-hours" class="tab-panel hidden">
+                <p class="avail-section-title" style="margin-bottom:20px">
+                    Configura gli slot disponibili per ogni giorno della settimana.
+                    Gli slot che deselezioni non saranno visibili ai clienti.
+                </p>
+
+                <div class="hours-dow-tabs">
+                    <button class="hours-dow-tab active" data-dow="1">Lun</button>
+                    <button class="hours-dow-tab" data-dow="2">Mar</button>
+                    <button class="hours-dow-tab" data-dow="3">Mer</button>
+                    <button class="hours-dow-tab" data-dow="4">Gio</button>
+                    <button class="hours-dow-tab" data-dow="5">Ven</button>
+                    <button class="hours-dow-tab" data-dow="6">Sab</button>
+                </div>
+
+                <div id="hours-loading" class="hidden" style="padding:30px;text-align:center;color:var(--text-muted)">
+                    <div class="spinner" style="margin:0 auto 10px"></div> Caricamento...
+                </div>
+
+                <div id="hours-editor" class="hours-editor">
+                    <div class="hours-new-slot">
+                        <label>Aggiungi slot personalizzato</label>
+                        <div class="hours-new-slot__row">
+                            <input type="time" id="new-slot-time" step="1800" />
+                            <button class="btn btn--outline" id="add-slot-btn" style="padding:10px 20px;font-size:.9rem">+ Aggiungi</button>
+                        </div>
+                    </div>
+
+                    <div class="hours-grid-wrap">
+                        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:12px">
+                            Clicca su uno slot per attivarlo/disattivarlo. Gli slot attivi (dorati) sono visibili ai clienti.
+                        </p>
+                        <div class="hours-grid" id="hours-grid"></div>
+                    </div>
+
+                    <div class="hours-actions">
+                        <button class="btn btn--outline" id="reset-hours-btn">↺ Ripristina default</button>
+                    </div>
+                    <p id="hours-feedback" style="font-size:.85rem;margin-top:10px;min-height:20px"></p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="admin.js"></script>
 </body>
 </html>

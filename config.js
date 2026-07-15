@@ -12,4 +12,4 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Deve essere IDENTICO a quello impostato con:
 // supabase secrets set ICAL_SECRET_TOKEN=...
 // ============================================
-const ICAL_SECRET_TOKEN = 'INSERISCI-QUI-LA-STESSA-STRINGA-SEGRETA';
+const ICAL_SECRET_TOKEN = '5jN1VOQ1WN';
