@@ -34,7 +34,7 @@ git init
 git add .
 git commit -m "Versione PHP su Vercel"
 git branch -M main
-git remote add origin https://github.com/TUO-USERNAME/TUO-REPO.git
+git remote add origin https://github.com/7luca/barbershopapp.git
 git push -u origin main
 ```
 Poi su Vercel: **Add New → Project → Import** il repo (se non l'hai già collegato) — il deploy parte da solo grazie a `vercel.json`.
