@@ -134,3 +134,58 @@ function readJsonBody(): array {
     $data = json_decode($raw, true);
     return is_array($data) ? $data : [];
 }
+
+/**
+ * Restituisce il day_of_week (1=Lun ... 6=Sab, 7=Dom) per una data "Y-m-d"
+ */
+function dayOfWeekFor(string $date): int {
+    return (int) (new DateTime($date))->format('N');
+}
+
+/**
+ * Garantisce che esistano righe in "slots" per la data richiesta.
+ * Se non esistono ancora, le genera a partire dal template settimanale
+ * (business_hours) per quel giorno della settimana. La Domenica (dow=7)
+ * non ha mai template quindi resta sempre chiusa.
+ * Restituisce l'elenco di slot (id, slot_time, is_open, is_booked) per la data.
+ */
+function ensureSlotsForDate(string $date): array {
+    [$status, $existing] = restRequest(
+        'GET',
+        'slots?slot_date=eq.' . urlencode($date) . '&select=id,slot_time,is_open,is_booked&order=slot_time.asc',
+        null,
+        true
+    );
+
+    if ($status === 200 && !empty($existing)) {
+        return $existing;
+    }
+
+    $dow = dayOfWeekFor($date);
+    if ($dow === 7) {
+        return []; // Domenica: sempre chiusa, nessun template
+    }
+
+    [$tplStatus, $template] = restRequest(
+        'GET',
+        'business_hours?day_of_week=eq.' . $dow . '&is_active=eq.true&select=slot_time&order=slot_time.asc',
+        null,
+        true
+    );
+
+    if ($tplStatus !== 200 || empty($template)) {
+        return []; // giorno senza orari configurati = chiuso
+    }
+
+    $rows = array_map(function ($t) use ($date) {
+        return ['slot_date' => $date, 'slot_time' => $t['slot_time'], 'is_open' => true, 'is_booked' => false];
+    }, $template);
+
+    [$insStatus, $inserted] = restRequest('POST', 'slots', $rows, true);
+
+    if ($insStatus !== 201 && $insStatus !== 200) {
+        return [];
+    }
+
+    return $inserted;
+}

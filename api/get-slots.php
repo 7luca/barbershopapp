@@ -15,13 +15,12 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     exit;
 }
 
-$path = 'slots?slot_date=eq.' . urlencode($date) . '&is_booked=eq.false&select=id,slot_time&order=slot_time.asc';
-[$status, $data] = restRequest('GET', $path, null, true);
+$allSlots = ensureSlotsForDate($date);
 
-if ($status !== 200) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Errore nel caricamento degli slot']);
-    exit;
-}
+$available = array_values(array_filter($allSlots, function ($s) {
+    return $s['is_open'] === true && $s['is_booked'] === false;
+}));
 
-echo json_encode(['slots' => $data]);
+echo json_encode(['slots' => array_map(function ($s) {
+    return ['id' => $s['id'], 'slot_time' => $s['slot_time']];
+}, $available)]);

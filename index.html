@@ -3,74 +3,169 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prenota il tuo appuntamento</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <title>Prenota il tuo appuntamento — Barber & Co.</title>
+  
+  <!-- Font di barbershop-main -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <!-- CSS Principale -->
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Stili di adattamento per gli elementi dinamici generati da app.js -->
+  <style>
+    /* Transizioni e gestione step di app.js */
+    .step { animation: fadeSlideIn .3s ease; }
+    .step:not(.active) { display: none !important; }
+    
+    /* Griglia degli orari generata da JS */
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin: 20px 0; }
+    .time-slot-btn { 
+        padding: 10px 6px; border-radius: var(--radius-sm); border: 1.5px solid var(--cream-mid); background: var(--cream);
+        text-align: center; font-family: var(--font-body); font-size: .9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); color: var(--charcoal);
+    }
+    .time-slot-btn:hover { border-color: var(--gold); background: var(--cream-mid); color: var(--gold-dk); }
+    .time-slot-btn.selected { background: var(--gold); border-color: var(--gold); color: var(--charcoal); box-shadow: 0 4px 12px rgba(201,168,76,.35); }
+    .no-slots-msg { grid-column: 1 / -1; color: var(--text-muted); font-size: .85rem; padding: 10px 0; text-align: center; }
+    
+    /* Input Form */
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="date"] {
+        padding: 12px 16px; border: 1.5px solid var(--cream-mid); border-radius: var(--radius-sm); background: var(--cream);
+        font-family: var(--font-body); font-size: 1rem; width: 100%; margin-bottom: 12px; transition: border-color var(--transition);
+    }
+    input:focus { outline: none; border-color: var(--gold); }
+    .auth-choice { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  </style>
 </head>
 <body>
 
-  <main class="container">
+  <!-- HERO SECTION -->
+  <header class="hero">
+      <div class="hero__noise"></div>
+      <nav class="nav">
+          <div class="nav__logo">✦ Barber & Co.</div>
+          <a href="admin.html" class="nav__admin-link">Area Barbiere</a>
+      </nav>
 
-    <!-- STEP 0: CODICE DI ACCESSO -->
-    <section id="step-access" class="step active">
-      <h1>Benvenuto</h1>
-      <p class="subtitle">Inserisci il codice fornito dal tuo barbiere</p>
-      <input type="text" id="access-code-input" placeholder="Codice di accesso" autocomplete="off">
-      <button id="btn-access-submit">Continua</button>
-      <p id="access-error" class="error-msg"></p>
-    </section>
-
-    <!-- STEP 1: CALENDARIO -->
-    <section id="step-calendar" class="step">
-      <h1>Scegli una data</h1>
-      <input type="date" id="date-picker">
-      <button id="btn-date-submit">Vedi orari disponibili</button>
-    </section>
-
-    <!-- STEP 2: ORARI -->
-    <section id="step-time" class="step">
-      <h1>Scegli un orario</h1>
-      <p class="subtitle" id="selected-date-label"></p>
-      <div id="time-slots-container" class="slots-grid"></div>
-      <button id="btn-back-to-calendar" class="secondary">← Cambia data</button>
-    </section>
-
-    <!-- STEP 3: ANAGRAFICA -->
-    <section id="step-details" class="step">
-      <h1>I tuoi dati</h1>
-      <p class="subtitle" id="recap-label"></p>
-
-      <div class="auth-choice" id="auth-choice">
-        <button id="btn-guest">Continua come Ospite</button>
-        <button id="btn-show-login" class="secondary">Accedi / Registrati</button>
+      <div class="hero__content">
+          <p class="hero__eyebrow">Dal 1987 — Milano</p>
+          <h1 class="hero__title">
+              L'Arte<br>
+              <em>del Taglio</em><br>
+              Perfetto
+          </h1>
+          <p class="hero__subtitle">Prenota il tuo appuntamento. Nessuna attesa, solo stile.</p>
+          <a href="#booking" class="btn btn--primary hero__cta">Prenota Ora ↓</a>
       </div>
+      <div class="hero__scroll-hint">
+          <span>Scorri</span>
+          <div class="hero__scroll-line"></div>
+      </div>
+  </header> 
+  
+  <section class="services-strip">
+      <div class="services-strip__inner">
+          <div class="service-badge">✂ Taglio Classico — €20</div>
+          <div class="service-badge">🪒 Rasatura con Rasoio — €25</div>
+          <div class="service-badge">✦ Taglio + Barba — €35</div>
+          <div class="service-badge">⚡ Rifinitura Barba — €15</div>
+          <div class="service-badge">💈 Trattamento Cute — €30</div>
+      </div>
+  </section>
 
-      <form id="login-form" class="hidden">
-        <input type="email" id="login-email" placeholder="Email" required>
-        <input type="password" id="login-password" placeholder="Password" required>
-        <button type="submit">Accedi</button>
-        <button type="button" id="btn-signup" class="secondary">Registrati invece</button>
-      </form>
+  <!-- BOOKING SECTION -->
+  <section class="booking" id="booking">
+      <div class="booking__container">
+          <div class="booking__card">
 
-      <form id="guest-form" class="hidden">
-        <input type="text" id="guest-name" placeholder="Nome e Cognome" required>
-        <input type="tel" id="guest-phone" placeholder="Telefono" required>
-        <input type="email" id="guest-email" placeholder="Email (opzionale)">
-        <button type="submit">Conferma prenotazione</button>
-      </form>
+            <!-- STEP 0: CODICE DI ACCESSO -->
+            <section id="step-access" class="step active">
+              <div class="step__header">
+                  <h2>Benvenuto</h2>
+                  <p class="subtitle">Inserisci il codice fornito dal tuo barbiere</p>
+              </div>
+              <div class="form">
+                  <input type="text" id="access-code-input" placeholder="Codice di accesso" autocomplete="off">
+                  <button id="btn-access-submit" class="btn btn--primary btn--full">Continua →</button>
+                  <p id="access-error" class="form__error"></p>
+              </div>
+            </section>
 
-      <button id="btn-back-to-time" class="secondary">← Cambia orario</button>
-    </section>
+            <!-- STEP 1: CALENDARIO -->
+            <section id="step-calendar" class="step">
+              <div class="step__header">
+                  <h2>Scegli una data</h2>
+                  <p>Seleziona il giorno per il tuo appuntamento</p>
+              </div>
+              <div class="form">
+                  <input type="date" id="date-picker">
+                  <button id="btn-date-submit" class="btn btn--primary btn--full">Vedi orari disponibili →</button>
+              </div>
+            </section>
 
-    <!-- STEP 4: CONFERMA -->
-    <section id="step-success" class="step">
-      <div class="success-icon">✓</div>
-      <h1>Prenotazione confermata</h1>
-      <p class="subtitle" id="success-recap"></p>
-      <button id="btn-new-booking" class="secondary">Nuova prenotazione</button>
-    </section>
+            <!-- STEP 2: ORARI -->
+            <section id="step-time" class="step">
+              <div class="step__header">
+                  <button id="btn-back-to-calendar" class="btn--back">← Cambia data</button>
+                  <h2>Scegli un orario</h2>
+                  <p class="step__selected" id="selected-date-label"></p>
+              </div>
+              <div id="time-slots-container" class="slots-grid"></div>
+            </section>
 
-  </main>
+            <!-- STEP 3: ANAGRAFICA -->
+            <section id="step-details" class="step">
+              <div class="step__header">
+                  <button id="btn-back-to-time" class="btn--back">← Cambia orario</button>
+                  <h2>I tuoi dati</h2>
+                  <p class="step__selected" id="recap-label"></p>
+              </div>
+
+              <div class="auth-choice" id="auth-choice">
+                <button id="btn-guest" class="btn btn--primary btn--full">Continua come Ospite</button>
+                <button id="btn-show-login" class="btn btn--outline btn--full">Accedi / Registrati</button>
+              </div>
+
+              <form id="login-form" class="form hidden">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit" class="btn btn--primary btn--full">Accedi</button>
+                <button type="button" id="btn-signup" class="btn btn--outline btn--full" style="margin-top:-10px;">Registrati invece</button>
+              </form>
+
+              <form id="guest-form" class="form hidden">
+                <input type="text" id="guest-name" placeholder="Nome e Cognome" required>
+                <input type="tel" id="guest-phone" placeholder="Telefono" required>
+                <input type="email" id="guest-email" placeholder="Email (opzionale)">
+                <button type="submit" class="btn btn--primary btn--full">Conferma prenotazione →</button>
+              </form>
+            </section>
+
+            <!-- STEP 4: CONFERMA -->
+            <section id="step-success" class="step">
+              <div class="success">
+                  <div class="success__icon">✓</div>
+                  <h2 class="success__title">Prenotazione confermata</h2>
+                  <p class="success__message" id="success-recap"></p>
+                  <button id="btn-new-booking" class="btn btn--outline" style="margin-top:20px;">Nuova prenotazione</button>
+              </div>
+            </section>
+
+          </div>
+      </div>
+  </section>
+
+  <footer class="footer">
+      <div class="footer__inner">
+          <div class="footer__brand">✦ Barber & Co.</div>
+          <div class="footer__info">
+              <p>Via Roma 42, Milano</p>
+              <p>Tel: <a href="tel:+390212345678">02 1234 5678</a></p>
+          </div>
+          <p class="footer__copy">© 2026 Barber & Co. — Tutti i diritti riservati</p>
+      </div>
+  </footer>
 
   <script src="app.js"></script>
 </body>
