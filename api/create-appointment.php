@@ -13,6 +13,8 @@ $slotId = trim($body['slot_id'] ?? '');
 $name = trim($body['name'] ?? '');
 $phone = trim($body['phone'] ?? '');
 $email = trim($body['email'] ?? '');
+$service = trim($body['service'] ?? '');
+$notes = trim($body['notes'] ?? '');
 $userId = trim($body['user_id'] ?? '');
 
 if ($slotId === '' || $name === '' || $phone === '') {
@@ -21,10 +23,9 @@ if ($slotId === '' || $name === '' || $phone === '') {
     exit;
 }
 
-// Ricontrolla che lo slot sia ancora libero (mitiga race condition su doppie prenotazioni)
-[$checkStatus, $slotData] = restRequest('GET', 'slots?id=eq.' . urlencode($slotId) . '&select=id,is_booked', null, true);
+[$checkStatus, $slotData] = restRequest('GET', 'slots?id=eq.' . urlencode($slotId) . '&select=id,is_booked,is_open', null, true);
 
-if ($checkStatus !== 200 || empty($slotData) || $slotData[0]['is_booked'] === true) {
+if ($checkStatus !== 200 || empty($slotData) || $slotData[0]['is_booked'] === true || $slotData[0]['is_open'] === false) {
     http_response_code(409);
     echo json_encode(['error' => 'Questo orario non è più disponibile, scegline un altro']);
     exit;
@@ -35,6 +36,8 @@ $insertBody = [
     'customer_name' => $name,
     'customer_phone' => $phone,
     'customer_email' => $email !== '' ? $email : null,
+    'service' => $service !== '' ? $service : null,
+    'notes' => $notes !== '' ? $notes : null,
     'user_id' => $userId !== '' ? $userId : null
 ];
 
@@ -46,4 +49,7 @@ if ($status !== 201 && $status !== 200) {
     exit;
 }
 
-echo json_encode(['success' => true]);
+echo json_encode([
+    'success' => true,
+    'appointment_id' => $data[0]['id'] ?? null
+]);

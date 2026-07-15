@@ -3,124 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Barber & Co.</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <title>Admin — Barber Shop</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
-  
-  <style>
-    /* Gestione active/hidden per le views (da PicoCSS al nuovo CSS) */
-    .step:not(.active) { display: none !important; }
-    
-    /* Layout a griglia per la dashboard admin */
-    .grid-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-bottom: 30px; }
-    @media (max-width: 768px) { .grid-dashboard { grid-template-columns: 1fr; } }
-    
-    /* Stili liste (Slot e Prenotazioni) creati da admin.js */
-    .slot-row, .appointment-row {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 18px; border-bottom: 1px solid var(--cream-mid); font-size: .9rem; background: var(--white);
-    }
-    .slot-row:last-child, .appointment-row:last-child { border-bottom: none; }
-    .slot-row button {
-        background: rgba(192,57,43,.08); color: var(--red); border: 1px solid rgba(192,57,43,.3);
-        border-radius: 6px; padding: 6px 12px; font-size: .8rem; cursor: pointer; font-weight: 500; transition: all 0.2s;
-    }
-    .slot-row button:hover { background: var(--red); color: white; }
-    .badge-booked { background: var(--charcoal); color: var(--gold); padding: 4px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
-    
-    /* Form Aggiunta Slot */
-    .admin-form-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .admin-form-row input {
-        padding: 10px 14px; border: 1.5px solid var(--cream-mid); border-radius: var(--radius-sm);
-        background: var(--cream); font-family: var(--font-body); font-size: .9rem; color: var(--charcoal);
-    }
-    .admin-form-row input:focus { outline: none; border-color: var(--gold); }
-  </style>
 </head>
-<body class="admin-body">
+<body>
 
-  <!-- LOGIN ADMIN -->
-  <section id="admin-login" class="step active admin-login">
-    <div class="admin-login__card">
-        <div class="admin-login__logo">✦ Barber & Co.</div>
-        <p class="admin-login__subtitle">Area Riservata Barbiere</p>
-        
-        <form id="admin-login-form" class="admin-login__form">
-            <input type="email" id="admin-email" placeholder="Email" required autofocus 
-                   style="padding: 14px 18px; border: 1.5px solid var(--charcoal-lt); border-radius: var(--radius-sm); background: var(--charcoal); color: var(--cream); font-size: 1rem; margin-bottom:12px; width: 100%;">
-            <input type="password" id="admin-password" placeholder="Password" required 
-                   style="padding: 14px 18px; border: 1.5px solid var(--charcoal-lt); border-radius: var(--radius-sm); background: var(--charcoal); color: var(--cream); font-size: 1rem; margin-bottom:4px; width: 100%;">
-            <p id="admin-login-error" class="admin-login__error"></p>
-            <button type="submit" class="btn btn--primary btn--full">Accedi →</button>
-        </form>
-    </div>
-  </section>
+  <main class="container">
 
-  <!-- DASHBOARD -->
-  <section id="admin-dashboard" class="step">
-    <header class="admin-header">
-        <div class="admin-header__logo">✦ Barber & Co.</div>
-        <div class="admin-header__user">
-            <button id="btn-logout" class="admin-header__logout">Esci</button>
-        </div>
-    </header>
+    <!-- LOGIN ADMIN -->
+    <section id="admin-login" class="step active">
+      <h1>Area Riservata</h1>
+      <form id="admin-login-form">
+        <input type="email" id="admin-email" placeholder="Email" required>
+        <input type="password" id="admin-password" placeholder="Password" required>
+        <button type="submit">Accedi</button>
+      </form>
+      <p id="admin-login-error" class="error-msg"></p>
+    </section>
 
-    <main class="admin-main">
-        <div class="grid-dashboard">
-            
-            <!-- Card 1: Gestione slot -->
-            <div class="avail-detail">
-                <div class="avail-detail__header">
-                    <h3>Apri nuovi orari</h3>
-                </div>
-                <div class="avail-slots-section">
-                    <div class="admin-form-row">
-                        <input type="date" id="admin-date-picker">
-                        <input type="time" id="admin-time-picker">
-                        <button id="btn-add-slot" class="btn btn--primary" style="padding: 10px 20px; font-size: .9rem;">+ Aggiungi</button>
-                    </div>
-                    <p id="add-slot-msg" style="color: var(--red); font-size: .85rem; margin-bottom: 16px;"></p>
+    <!-- DASHBOARD -->
+    <section id="admin-dashboard" class="step">
+      <nav class="admin-nav">
+        <h1>Dashboard</h1>
+        <button id="btn-logout" class="secondary outline">Esci</button>
+      </nav>
 
-                    <h4 style="font-size: .8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;">Slot per la data selezionata</h4>
-                    <div id="admin-slots-list" style="border: 1px solid var(--cream-mid); border-radius: var(--radius-sm); overflow: hidden;">
-                        <!-- Righe generate da admin.js -->
-                    </div>
-                </div>
-            </div>
+      <div class="grid">
+        <!-- Gestione slot -->
+        <article>
+          <h2>Apri nuovi orari</h2>
+          <input type="date" id="admin-date-picker">
+          <input type="time" id="admin-time-picker">
+          <button id="btn-add-slot">Aggiungi slot</button>
+          <p id="add-slot-msg" class="error-msg"></p>
 
-            <!-- Card 2: Prenotazioni -->
-            <div class="avail-detail">
-                <div class="avail-detail__header">
-                    <h3>Prenotazioni ricevute</h3>
-                </div>
-                <div class="avail-slots-section">
-                    <div id="appointments-list" style="border: 1px solid var(--cream-mid); border-radius: var(--radius-sm); overflow: hidden;">
-                        <!-- Righe generate da admin.js -->
-                    </div>
-                </div>
-            </div>
-            
-        </div>
+          <h3>Slot per la data selezionata</h3>
+          <div id="admin-slots-list"></div>
+        </article>
 
-        <!-- Card 3: Sincronizzazione iCal -->
-        <div class="ical-banner">
-            <div class="ical-banner__icon">📅</div>
-            <div class="ical-banner__content">
-                <div class="ical-banner__title">Sincronizza con Apple Calendar</div>
-                <div class="ical-banner__text">
-                    Copia questo link e aggiungilo come "Calendario da URL" su iPhone/Mac.
-                </div>
-                <div class="ical-banner__url" style="margin-top: 14px;">
-                    <input type="text" id="ical-link" readonly style="flex:1; background: rgba(255,255,255,.05); border: 1px solid var(--charcoal-lt); padding: 8px 12px; border-radius: 6px; font-size: .85rem; color: var(--cream-mid);">
-                    <button id="btn-copy-ical" class="btn btn--outline" style="padding:8px 16px;font-size:.8rem;white-space:nowrap">📋 Copia link</button>
-                </div>
-            </div>
-        </div>
-    </main>
-  </section>
+        <!-- Prenotazioni -->
+        <article>
+          <h2>Prenotazioni ricevute</h2>
+          <div id="appointments-list"></div>
+        </article>
+      </div>
+
+      <article class="ical-box">
+        <h2>Sincronizza con Apple Calendar</h2>
+        <p class="subtitle">Copia questo link e aggiungilo come "Calendario da URL" su iPhone/Mac:</p>
+        <input type="text" id="ical-link" readonly>
+        <button id="btn-copy-ical" class="secondary">Copia link</button>
+      </article>
+    </section>
+
+  </main>
 
   <script src="admin.js"></script>
 </body>
