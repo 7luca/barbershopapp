@@ -1,0 +1,223 @@
+/* ============================================
+   RESET & BASE — Look minimale, tipografia curata
+   ============================================ */
+
+:root {
+  --pico-font-family: 'Helvetica Neue', Arial, sans-serif;
+  --pico-primary: #111111;
+  --pico-primary-hover: #333333;
+  --pico-primary-background: #111111;
+  --pico-border-radius: 6px;
+  --pico-typography-spacing-vertical: 1rem;
+}
+
+body {
+  background: #fafafa;
+  color: #111;
+}
+
+.container {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 1.75rem;
+}
+
+/* ============================================
+   STEP MANAGEMENT — solo uno step visibile alla volta
+   ============================================ */
+
+.step {
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+
+.step.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   INPUT & BUTTON
+   ============================================ */
+
+input, button {
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+button {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+button.secondary {
+  background: transparent;
+  color: #111;
+  border: 1px solid #ddd;
+}
+
+button.outline {
+  background: transparent;
+}
+
+.error-msg {
+  color: #c0392b;
+  font-size: 0.85rem;
+  text-align: center;
+  min-height: 1.2rem;
+}
+
+/* ============================================
+   SLOT GRID (orari disponibili)
+   ============================================ */
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.time-slot-btn {
+  padding: 0.7rem 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.time-slot-btn:hover {
+  border-color: #111;
+}
+
+.time-slot-btn.selected {
+  background: #111;
+  color: white;
+  border-color: #111;
+}
+
+.no-slots-msg {
+  text-align: center;
+  color: #999;
+  padding: 2rem 0;
+  grid-column: 1 / -1;
+}
+
+/* ============================================
+   AUTH CHOICE / FORM TOGGLES
+   ============================================ */
+
+.hidden {
+  display: none !important;
+}
+
+.auth-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   SUCCESS STEP
+   ============================================ */
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #111;
+  color: white;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+/* ============================================
+   ADMIN SPECIFIC
+   ============================================ */
+
+.admin-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.admin-nav h1 {
+  text-align: left;
+  margin: 0;
+}
+
+body:has(#admin-dashboard.active) .container {
+  max-width: 900px;
+}
+
+.slot-row, .appointment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.slot-row button {
+  width: auto;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  background: transparent;
+  color: #c0392b;
+  border: 1px solid #eee;
+}
+
+.badge-booked {
+  background: #111;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ical-box {
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 480px) {
+  .slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

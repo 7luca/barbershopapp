@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prenota il tuo appuntamento</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="container">
+
+    <!-- STEP 0: CODICE DI ACCESSO -->
+    <section id="step-access" class="step active">
+      <h1>Benvenuto</h1>
+      <p class="subtitle">Inserisci il codice fornito dal tuo barbiere</p>
+      <input type="text" id="access-code-input" placeholder="Codice di accesso" autocomplete="off">
+      <button id="btn-access-submit">Continua</button>
+      <p id="access-error" class="error-msg"></p>
+    </section>
+
+    <!-- STEP 1: CALENDARIO -->
+    <section id="step-calendar" class="step">
+      <h1>Scegli una data</h1>
+      <input type="date" id="date-picker">
+      <button id="btn-date-submit">Vedi orari disponibili</button>
+    </section>
+
+    <!-- STEP 2: ORARI -->
+    <section id="step-time" class="step">
+      <h1>Scegli un orario</h1>
+      <p class="subtitle" id="selected-date-label"></p>
+      <div id="time-slots-container" class="slots-grid"></div>
+      <button id="btn-back-to-calendar" class="secondary">← Cambia data</button>
+    </section>
+
+    <!-- STEP 3: ANAGRAFICA -->
+    <section id="step-details" class="step">
+      <h1>I tuoi dati</h1>
+      <p class="subtitle" id="recap-label"></p>
+
+      <div class="auth-choice" id="auth-choice">
+        <button id="btn-guest">Continua come Ospite</button>
+        <button id="btn-show-login" class="secondary">Accedi / Registrati</button>
+      </div>
+
+      <form id="login-form" class="hidden">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Accedi</button>
+        <button type="button" id="btn-signup" class="secondary">Registrati invece</button>
+      </form>
+
+      <form id="guest-form" class="hidden">
+        <input type="text" id="guest-name" placeholder="Nome e Cognome" required>
+        <input type="tel" id="guest-phone" placeholder="Telefono" required>
+        <input type="email" id="guest-email" placeholder="Email (opzionale)">
+        <button type="submit">Conferma prenotazione</button>
+      </form>
+
+      <button id="btn-back-to-time" class="secondary">← Cambia orario</button>
+    </section>
+
+    <!-- STEP 4: CONFERMA -->
+    <section id="step-success" class="step">
+      <div class="success-icon">✓</div>
+      <h1>Prenotazione confermata</h1>
+      <p class="subtitle" id="success-recap"></p>
+      <button id="btn-new-booking" class="secondary">Nuova prenotazione</button>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
