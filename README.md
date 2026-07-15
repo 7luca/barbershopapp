@@ -1,66 +1,88 @@
-# Barber Shop App — Checklist di Setup
+# Barber Shop App — Versione PHP + Vercel
 
-File pronti. Segui questo ordine per andare live.
+Il database Supabase (tabelle + RLS) resta quello già creato in precedenza: **non serve rifare nulla lì**.
 
-## 1. Supabase — Database
-1. Crea un progetto su https://supabase.com (piano Free).
-2. Vai su **SQL Editor → New Query**, incolla tutto il contenuto di `supabase_setup.sql` ed esegui (**Run**).
-3. Vai su **Authentication → Users → Add User**, crea il tuo utente barbiere (email + password).
-4. Copia il suo **UUID**, torna su SQL Editor ed esegui:
-   ```sql
-   insert into admins (user_id) values ('INCOLLA-QUI-UUID-UTENTE');
-   ```
-5. Vai su **Project Settings → API** e copia:
-   - **Project URL**
-   - **anon public key**
+Cambia solo il modo in cui il sito parla con Supabase: ora lo fa un backend PHP (in `/api`),
+non più il browser direttamente. Frontend statico invariato nell'aspetto.
 
-## 2. Configura `config.js`
-Apri `config.js` e sostituisci:
+## 1. Variabili d'ambiente su Vercel
+Vai su **Vercel → il tuo progetto → Settings → Environment Variables** e aggiungi:
+
+| Nome | Valore | Dove trovarlo |
+|---|---|---|
+| `SUPABASE_URL` | `https://TUO-PROGETTO.supabase.co` | Supabase → Project Settings → API |
+| `SUPABASE_ANON_KEY` | la anon public key | Supabase → Project Settings → API |
+| `SUPABASE_SERVICE_KEY` | la **service_role** key (segreta!) | Supabase → Project Settings → API |
+| `ICAL_SECRET_TOKEN` | una stringa a caso, lunga e casuale | generala tu (es. da un password manager) |
+
+⚠️ `SUPABASE_SERVICE_KEY` bypassa tutte le RLS: non deve MAI arrivare al browser.
+Qui resta solo lato server (dentro le funzioni PHP), quindi è sicura.
+
+Dopo aver aggiunto le variabili, fai un **redeploy** del progetto perché vengano applicate.
+
+## 2. Aggiorna il token iCal nel codice
+Apri `admin.js` e sostituisci:
 ```javascript
-const SUPABASE_URL = 'https://TUO-PROGETTO.supabase.co';
-const SUPABASE_ANON_KEY = 'TUA-ANON-KEY-PUBBLICA';
-const ICAL_SECRET_TOKEN = 'INSERISCI-QUI-LA-STESSA-STRINGA-SEGRETA'; // vedi step 3
+const ICAL_TOKEN = 'INSERISCI-QUI-LA-STESSA-STRINGA-SEGRETA';
 ```
+con lo stesso valore che hai messo in `ICAL_SECRET_TOKEN` su Vercel.
 
-## 3. Edge Function — Apple Calendar Sync
-```bash
-npm install -g supabase
-supabase login
-supabase link --project-ref TUO-PROJECT-REF
-supabase secrets set ICAL_SECRET_TOKEN=una-stringa-casuale-lunga-e-sicura
-supabase functions deploy ical-feed --no-verify-jwt
-```
-⚠️ Usa la **stessa identica stringa** sia nel comando `secrets set` sia in `ICAL_SECRET_TOKEN` dentro `config.js`.
-
-## 4. Deploy su GitHub Pages
+## 3. Deploy
+Dato che Vercel è già collegato al tuo GitHub:
 ```bash
 git init
 git add .
-git commit -m "Prima versione Barber Shop App"
+git commit -m "Versione PHP su Vercel"
 git branch -M main
 git remote add origin https://github.com/TUO-USERNAME/TUO-REPO.git
 git push -u origin main
 ```
-Poi su GitHub: **Settings → Pages → Source: Deploy from branch → main → / (root) → Save**.
+Poi su Vercel: **Add New → Project → Import** il repo (se non l'hai già collegato) — il deploy parte da solo grazie a `vercel.json`.
 
-Il sito sarà live su:
-`https://TUO-USERNAME.github.io/TUO-REPO/`
+Ad ogni push su `main`, Vercel farà il deploy automaticamente.
 
-## 5. Test rapido
-- Apri il sito, inserisci il codice `BARBER2026` (o quello che hai impostato in `settings`).
-- Vai su `/admin.html`, fai login con l'utente admin, apri qualche slot per oggi/domani.
-- Torna sul sito principale e verifica che gli slot appaiano e che la prenotazione vada a buon fine.
-- Copia il link iCal dalla dashboard admin e iscrivi il tuo iPhone/Mac.
+## 4. Crea l'utente admin (se non l'hai già fatto)
+Su Supabase → Authentication → Users → Add User, poi:
+```sql
+insert into admins (user_id) values ('UUID-DEL-TUO-UTENTE');
+```
+
+## 5. Test
+- Apri `https://TUO-PROGETTO.vercel.app`, inserisci il codice di accesso.
+- Vai su `/admin.html`, fai login, apri qualche slot.
+- Prova una prenotazione da `index.html` e verifica che compaia in dashboard.
+- Copia il link iCal e iscrivilo su iPhone/Mac.
 
 ## Struttura file
 ```
-barbershop-app/
-├── index.html              # Frontend cliente
-├── admin.html               # Dashboard barbiere
+barbershop-php/
+├── index.html              # Frontend cliente (statico)
+├── admin.html               # Dashboard barbiere (statico)
 ├── style.css                 # Stile condiviso
-├── app.js                     # Logica cliente
-├── admin.js                  # Logica admin
-├── config.js                 # Chiavi Supabase (da compilare)
-├── supabase_setup.sql   # Script SQL da eseguire una volta
-└── supabase/functions/ical-feed/index.ts   # Edge Function iCal
+├── app.js                     # Logica cliente → chiama /api/*.php
+├── admin.js                  # Logica admin → chiama /api/*.php
+├── vercel.json                # Config runtime PHP
+└── api/
+    ├── config.php             # Legge le env vars
+    ├── supabase.php          # Helper cURL verso Supabase REST/Auth
+    ├── check-access.php     # Verifica codice di accesso
+    ├── get-slots.php          # Slot disponibili per una data
+    ├── create-appointment.php # Salva una prenotazione
+    ├── auth.php                # Login/signup cliente
+    ├── admin-login.php       # Login admin (imposta cookie httpOnly)
+    ├── admin-check.php       # Verifica sessione admin
+    ├── admin-logout.php     # Elimina il cookie
+    ├── admin-slots.php       # Elenco/creazione slot (admin)
+    ├── admin-delete-slot.php # Eliminazione slot (admin)
+    ├── admin-appointments.php # Elenco prenotazioni (admin)
+    └── ical.php                 # Feed .ics per Apple Calendar
 ```
+
+## Note tecniche importanti
+- **Niente `$_SESSION` PHP**: Vercel è serverless, ogni richiesta può girare su un'istanza diversa,
+  quindi le sessioni file-based non sono affidabili. L'autenticazione admin usa invece un
+  **cookie httpOnly** con l'access_token di Supabase, verificato ad ogni richiesta.
+- Il cookie scade dopo ~1 ora (durata del token Supabase): se l'admin resta loggato più a lungo,
+  dovrà rifare il login. Per un uso quotidiano da parte di un singolo barbiere è sufficiente;
+  se vuoi sessioni più lunghe, si può implementare il refresh_token in un secondo momento.
+- Il database e le RLS **non sono stati toccati**: restano quelli già funzionanti.

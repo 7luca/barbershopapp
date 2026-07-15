@@ -1,22 +1,35 @@
 // ============================================
-// INIZIALIZZAZIONE SUPABASE
+// STATO APPLICAZIONE
 // ============================================
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Stato dell'applicazione (in memoria, nessun reload)
 const state = {
   accessGranted: false,
   selectedDate: null,
   selectedSlot: null, // { id, time }
-  userSession: null
+  loggedUser: null
 };
 
 // ============================================
-// HELPER: cambio step
+// HELPER: cambio step (nessun reload di pagina)
 // ============================================
 function goToStep(stepId) {
   document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
   document.getElementById(stepId).classList.add('active');
+}
+
+// ============================================
+// HELPER: chiamata generica agli endpoint PHP
+// ============================================
+async function apiCall(endpoint, method = 'GET', body = null) {
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin'
+  };
+  if (body) options.body = JSON.stringify(body);
+
+  const res = await fetch(endpoint, options);
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
 }
 
 // ============================================
@@ -32,22 +45,16 @@ document.getElementById('btn-access-submit').addEventListener('click', async () 
     return;
   }
 
-  const { data, error } = await supabase
-    .from('settings')
-    .select('access_code')
-    .eq('id', 1)
-    .single();
+  const { ok, data } = await apiCall('/api/check-access.php', 'POST', { code: input });
 
-  if (error) {
+  if (!ok) {
     errorEl.textContent = 'Errore di connessione. Riprova.';
-    console.error(error);
     return;
   }
 
-  if (data.access_code.toUpperCase() === input.toUpperCase()) {
+  if (data.valid) {
     state.accessGranted = true;
     goToStep('step-calendar');
-    // Data minima selezionabile = oggi
     const dateInput = document.getElementById('date-picker');
     dateInput.min = new Date().toISOString().split('T')[0];
   } else {
@@ -55,7 +62,6 @@ document.getElementById('btn-access-submit').addEventListener('click', async () 
   }
 });
 
-// Permetti invio con tasto Enter
 document.getElementById('access-code-input').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-access-submit').click();
 });
@@ -80,27 +86,22 @@ async function loadAvailableSlots(date) {
   const container = document.getElementById('time-slots-container');
   container.innerHTML = '<p class="no-slots-msg">Caricamento...</p>';
 
-  // Etichetta data leggibile (es. "martedì 15 luglio 2026")
   const dateObj = new Date(date + 'T00:00:00');
   const label = dateObj.toLocaleDateString('it-IT', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
   document.getElementById('selected-date-label').textContent = label;
 
-  const { data: slots, error } = await supabase
-    .from('slots')
-    .select('id, slot_time, is_booked')
-    .eq('slot_date', date)
-    .eq('is_booked', false)
-    .order('slot_time', { ascending: true });
+  const { ok, data } = await apiCall(`/api/get-slots.php?date=${encodeURIComponent(date)}`);
 
-  if (error) {
+  if (!ok) {
     container.innerHTML = '<p class="no-slots-msg">Errore nel caricamento.</p>';
-    console.error(error);
     return;
   }
 
-  if (!slots || slots.length === 0) {
+  const slots = data.slots || [];
+
+  if (slots.length === 0) {
     container.innerHTML = '<p class="no-slots-msg">Nessun orario disponibile per questa data.</p>';
     return;
   }
@@ -109,13 +110,12 @@ async function loadAvailableSlots(date) {
   slots.forEach(slot => {
     const btn = document.createElement('div');
     btn.classList.add('time-slot-btn');
-    btn.textContent = slot.slot_time.slice(0, 5); // "09:00:00" -> "09:00"
+    btn.textContent = slot.slot_time.slice(0, 5);
     btn.addEventListener('click', () => {
       document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.selectedSlot = { id: slot.id, time: slot.slot_time };
 
-      // Aggiorna recap e passa allo step successivo dopo breve delay
       document.getElementById('recap-label').textContent =
         `${label} alle ${slot.slot_time.slice(0, 5)}`;
 
@@ -125,13 +125,8 @@ async function loadAvailableSlots(date) {
   });
 }
 
-document.getElementById('btn-back-to-calendar').addEventListener('click', () => {
-  goToStep('step-calendar');
-});
-
-document.getElementById('btn-back-to-time').addEventListener('click', () => {
-  goToStep('step-time');
-});
+document.getElementById('btn-back-to-calendar').addEventListener('click', () => goToStep('step-calendar'));
+document.getElementById('btn-back-to-time').addEventListener('click', () => goToStep('step-time'));
 
 // ============================================
 // STEP 2 — ANAGRAFICA: SCELTA OSPITE O LOGIN
@@ -152,23 +147,23 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { ok, data } = await apiCall('/api/auth.php', 'POST', { action: 'login', email, password });
 
-  if (error) {
-    alert('Accesso fallito: ' + error.message);
+  if (!ok) {
+    alert('Accesso fallito: ' + (data.error || 'errore sconosciuto'));
     return;
   }
 
-  state.userSession = data.session;
+  state.loggedUser = data.user;
   await createAppointment({
-    name: data.user.user_metadata?.full_name || email.split('@')[0],
-    phone: data.user.user_metadata?.phone || 'N/D',
-    email: email,
+    name: data.user.name,
+    phone: 'N/D',
+    email: data.user.email,
     userId: data.user.id
   });
 });
 
-// --- REGISTRAZIONE RAPIDA (dal form di login) ---
+// --- REGISTRAZIONE ---
 document.getElementById('btn-signup').addEventListener('click', async () => {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -178,14 +173,14 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
     return;
   }
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { ok, data } = await apiCall('/api/auth.php', 'POST', { action: 'signup', email, password });
 
-  if (error) {
-    alert('Registrazione fallita: ' + error.message);
+  if (!ok) {
+    alert('Registrazione fallita: ' + (data.error || 'errore sconosciuto'));
     return;
   }
 
-  alert('Registrazione effettuata! Controlla la tua email per confermare, poi effettua il login.');
+  alert(data.message || 'Registrazione effettuata. Controlla la tua email.');
 });
 
 // --- GUEST ---
@@ -195,11 +190,11 @@ document.getElementById('guest-form').addEventListener('submit', async (e) => {
   const phone = document.getElementById('guest-phone').value.trim();
   const email = document.getElementById('guest-email').value.trim();
 
-  await createAppointment({ name, phone, email: email || null, userId: null });
+  await createAppointment({ name, phone, email, userId: null });
 });
 
 // ============================================
-// SALVATAGGIO PRENOTAZIONE (comune a guest e utenti loggati)
+// SALVATAGGIO PRENOTAZIONE
 // ============================================
 async function createAppointment({ name, phone, email, userId }) {
   if (!state.selectedSlot) {
@@ -208,17 +203,20 @@ async function createAppointment({ name, phone, email, userId }) {
     return;
   }
 
-  const { error } = await supabase.from('appointments').insert({
+  const { ok, data } = await apiCall('/api/create-appointment.php', 'POST', {
     slot_id: state.selectedSlot.id,
-    customer_name: name,
-    customer_phone: phone,
-    customer_email: email,
+    name,
+    phone,
+    email,
     user_id: userId
   });
 
-  if (error) {
-    alert('Errore nel salvataggio della prenotazione: ' + error.message);
-    console.error(error);
+  if (!ok) {
+    alert('Errore nel salvataggio: ' + (data.error || 'riprova più tardi'));
+    if (data.error && data.error.includes('non è più disponibile')) {
+      await loadAvailableSlots(state.selectedDate);
+      goToStep('step-time');
+    }
     return;
   }
 

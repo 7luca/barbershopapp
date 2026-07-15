@@ -1,17 +1,25 @@
 // ============================================
-// INIZIALIZZAZIONE SUPABASE
+// HELPER: chiamata generica agli endpoint PHP (con cookie di sessione)
 // ============================================
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+async function apiCall(endpoint, method = 'GET', body = null) {
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin' // include il cookie httpOnly
+  };
+  if (body) options.body = JSON.stringify(body);
 
-let currentSession = null;
+  const res = await fetch(endpoint, options);
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
 
 // ============================================
 // CONTROLLO SESSIONE ALL'AVVIO
 // ============================================
 (async function initAdmin() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    currentSession = session;
+  const { data } = await apiCall('/api/admin-check.php');
+  if (data.authenticated) {
     await enterDashboard();
   }
 })();
@@ -26,32 +34,18 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
   const errorEl = document.getElementById('admin-login-error');
   errorEl.textContent = '';
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { ok, data } = await apiCall('/api/admin-login.php', 'POST', { email, password });
 
-  if (error) {
-    errorEl.textContent = 'Credenziali non valide.';
+  if (!ok) {
+    errorEl.textContent = data.error || 'Accesso non riuscito.';
     return;
   }
 
-  // Verifica che l'utente sia effettivamente admin (tabella admins + RLS)
-  const { data: adminCheck, error: adminError } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('user_id', data.user.id)
-    .maybeSingle();
-
-  if (adminError || !adminCheck) {
-    errorEl.textContent = 'Questo account non ha permessi di amministrazione.';
-    await supabase.auth.signOut();
-    return;
-  }
-
-  currentSession = data.session;
   await enterDashboard();
 });
 
 document.getElementById('btn-logout').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await apiCall('/api/admin-logout.php', 'POST');
   location.reload();
 });
 
@@ -87,15 +81,10 @@ document.getElementById('btn-add-slot').addEventListener('click', async () => {
     return;
   }
 
-  const { error } = await supabase.from('slots').insert({
-    slot_date: date,
-    slot_time: time
-  });
+  const { ok, data } = await apiCall('/api/admin-slots.php', 'POST', { date, time });
 
-  if (error) {
-    msgEl.textContent = error.code === '23505'
-      ? 'Questo slot esiste già.'
-      : 'Errore: ' + error.message;
+  if (!ok) {
+    msgEl.textContent = data.error || 'Errore nella creazione dello slot.';
     return;
   }
 
@@ -112,18 +101,16 @@ async function loadSlotsForDate(date) {
   const container = document.getElementById('admin-slots-list');
   container.innerHTML = '<p>Caricamento...</p>';
 
-  const { data: slots, error } = await supabase
-    .from('slots')
-    .select('id, slot_time, is_booked')
-    .eq('slot_date', date)
-    .order('slot_time', { ascending: true });
+  const { ok, data } = await apiCall(`/api/admin-slots.php?date=${encodeURIComponent(date)}`);
 
-  if (error) {
+  if (!ok) {
     container.innerHTML = '<p>Errore nel caricamento.</p>';
     return;
   }
 
-  if (!slots || slots.length === 0) {
+  const slots = data.slots || [];
+
+  if (slots.length === 0) {
     container.innerHTML = '<p style="color:#999">Nessuno slot per questa data.</p>';
     return;
   }
@@ -145,12 +132,12 @@ async function loadSlotsForDate(date) {
 
     const delBtn = document.createElement('button');
     delBtn.textContent = 'Elimina';
-    delBtn.disabled = slot.is_booked; // non permettere di eliminare slot già prenotati
+    delBtn.disabled = slot.is_booked;
     delBtn.addEventListener('click', async () => {
       if (!confirm('Eliminare questo slot?')) return;
-      const { error } = await supabase.from('slots').delete().eq('id', slot.id);
-      if (error) {
-        alert('Errore: ' + error.message);
+      const { ok, data } = await apiCall('/api/admin-delete-slot.php', 'POST', { slot_id: slot.id });
+      if (!ok) {
+        alert(data.error || 'Errore nella eliminazione.');
         return;
       }
       await loadSlotsForDate(date);
@@ -169,25 +156,16 @@ async function loadAppointments() {
   const container = document.getElementById('appointments-list');
   container.innerHTML = '<p>Caricamento...</p>';
 
-  const { data: appointments, error } = await supabase
-    .from('appointments')
-    .select(`
-      id,
-      customer_name,
-      customer_phone,
-      customer_email,
-      created_at,
-      slots ( slot_date, slot_time )
-    `)
-    .order('created_at', { ascending: false });
+  const { ok, data } = await apiCall('/api/admin-appointments.php');
 
-  if (error) {
+  if (!ok) {
     container.innerHTML = '<p>Errore nel caricamento delle prenotazioni.</p>';
-    console.error(error);
     return;
   }
 
-  if (!appointments || appointments.length === 0) {
+  const appointments = data.appointments || [];
+
+  if (appointments.length === 0) {
     container.innerHTML = '<p style="color:#999">Nessuna prenotazione ancora.</p>';
     return;
   }
@@ -197,8 +175,9 @@ async function loadAppointments() {
     const row = document.createElement('div');
     row.classList.add('appointment-row');
 
-    const dateLabel = appt.slots
-      ? `${appt.slots.slot_date} · ${appt.slots.slot_time.slice(0, 5)}`
+    const slot = appt.slots;
+    const dateLabel = slot
+      ? `${slot.slot_date} · ${slot.slot_time.slice(0, 5)}`
       : 'Slot rimosso';
 
     row.innerHTML = `
@@ -212,12 +191,13 @@ async function loadAppointments() {
 }
 
 // ============================================
-// LINK ICAL (Apple Calendar Sync tramite Edge Function)
+// LINK ICAL
 // ============================================
 function setupIcalLink() {
   const icalInput = document.getElementById('ical-link');
-  const projectRef = SUPABASE_URL.replace('https://', '').split('.')[0];
-  icalInput.value = `https://${projectRef}.supabase.co/functions/v1/ical-feed?token=${ICAL_SECRET_TOKEN}`;
+  // Il token va inserito manualmente qui una volta (stesso valore di ICAL_SECRET_TOKEN su Vercel)
+  const ICAL_TOKEN = 'vodazmmhfu';
+  icalInput.value = `${window.location.origin}/api/ical.php?token=${ICAL_TOKEN}`;
 
   document.getElementById('btn-copy-ical').addEventListener('click', () => {
     icalInput.select();
