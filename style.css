@@ -317,6 +317,17 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 700; margin: 0; }
 /* ============================================
    HOURS TAB
    ============================================ */
+.settings-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; margin-bottom: 28px;
+}
+.settings-card__row { display: flex; gap: 10px; flex-wrap: wrap; }
+.settings-card__row input {
+  flex: 1; min-width: 180px; padding: 10px 14px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-sans); font-size: 16px;
+}
+
 .hours-dow-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
 .hours-dow-tab {
   background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);

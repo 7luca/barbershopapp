@@ -248,6 +248,7 @@ async function loadDayDetail(dateStr) {
 const hoursState = { dow: 1 };
 
 function initHoursTab() {
+  loadAccessCode();
   loadHoursForDow(1);
   document.querySelectorAll('.hours-dow-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -278,6 +279,27 @@ function initHoursTab() {
     await loadHoursForDow(hoursState.dow);
   });
 }
+
+async function loadAccessCode() {
+  const { ok, data } = await apiCall('/api/admin-settings.php');
+  if (ok) document.getElementById('access-code-input').value = data.access_code || '';
+}
+
+document.getElementById('save-access-code-btn').addEventListener('click', async () => {
+  const code = document.getElementById('access-code-input').value.trim();
+  const feedback = document.getElementById('access-code-feedback');
+  feedback.textContent = '';
+
+  if (code.length < 4) {
+    feedback.style.color = 'var(--danger)';
+    feedback.textContent = 'Il codice deve avere almeno 4 caratteri.';
+    return;
+  }
+
+  const { ok, data } = await apiCall('/api/admin-settings.php', 'POST', { access_code: code });
+  feedback.style.color = ok ? 'var(--success)' : 'var(--danger)';
+  feedback.textContent = ok ? 'Codice aggiornato ✓' : (data.error || 'Errore nel salvataggio.');
+});
 
 async function loadHoursForDow(dow) {
   const loading = document.getElementById('hours-loading');

@@ -142,6 +142,18 @@
 
             <!-- TAB 3: ORARI DI APERTURA -->
             <div id="tab-hours" class="tab-panel hidden">
+                <div class="settings-card">
+                    <h3 class="avail-section-title" style="margin-bottom:12px">🔑 Codice di accesso clienti</h3>
+                    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">
+                        I clienti devono inserire questo codice per entrare nel sito di prenotazione.
+                    </p>
+                    <div class="settings-card__row">
+                        <input type="text" id="access-code-input" placeholder="Es. BARBER2026" autocomplete="off" />
+                        <button class="btn btn--primary" id="save-access-code-btn" style="padding:10px 20px;font-size:.9rem;width:auto">Salva</button>
+                    </div>
+                    <p id="access-code-feedback" style="font-size:.82rem;margin-top:8px;min-height:18px"></p>
+                </div>
+
                 <p class="avail-section-title" style="margin-bottom:20px">
                     Configura gli slot disponibili per ogni giorno della settimana.
                     Gli slot che deselezioni non saranno visibili ai clienti.
