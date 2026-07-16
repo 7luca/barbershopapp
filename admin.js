@@ -127,7 +127,7 @@ document.getElementById('all-btn').addEventListener('click', () => {
 
 function setupIcalLink() {
   const icalInput = document.getElementById('ical-url');
-  const ICAL_TOKEN = '5jN1VOQ1WN'; // deve combaciare con ICAL_SECRET_TOKEN su Vercel
+  const ICAL_TOKEN = 'INSERISCI-QUI-LA-STESSA-STRINGA-SEGRETA'; // deve combaciare con ICAL_SECRET_TOKEN su Vercel
   icalInput.textContent = `${window.location.origin}/api/ical.php?token=${ICAL_TOKEN}`;
 
   document.getElementById('copy-ical-btn').addEventListener('click', () => {
