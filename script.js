@@ -51,6 +51,7 @@ document.getElementById('access-submit-btn').addEventListener('click', async () 
   if (!ok) { errEl.textContent = 'Errore di connessione. Riprova.'; return; }
 
   if (data.valid) {
+    document.getElementById('account-bar').classList.remove('hidden');
     goToStep('step-1');
     await loadMonthAvailability();
     renderCalendar();
@@ -332,4 +333,93 @@ document.getElementById('new-booking-btn').addEventListener('click', () => {
 
   goToStep('step-1');
   renderCalendar();
+});
+
+// ============================================
+// AREA "IL MIO ACCOUNT"
+// ============================================
+document.getElementById('account-nav-btn').addEventListener('click', () => {
+  goToStep('step-account');
+  loadAccountView();
+});
+
+document.getElementById('account-back-btn').addEventListener('click', () => {
+  goToStep(state.selectedSlot ? 'step-3' : 'step-1');
+});
+
+async function loadAccountView() {
+  const { data } = await apiCall('/api/account-check.php');
+
+  if (data.authenticated) {
+    showLoggedAccountView(data.user);
+  } else {
+    document.getElementById('account-guest-view').classList.remove('hidden');
+    document.getElementById('account-logged-view').classList.add('hidden');
+  }
+}
+
+document.getElementById('account-login-btn').addEventListener('click', async () => {
+  const email = document.getElementById('account-email').value.trim();
+  const password = document.getElementById('account-password').value;
+  const errEl = document.getElementById('account-login-error');
+  errEl.classList.add('hidden');
+
+  if (!email || !password) {
+    errEl.textContent = 'Inserisci email e password.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const { ok, data } = await apiCall('/api/auth.php', 'POST', { action: 'login', email, password });
+
+  if (!ok) {
+    errEl.textContent = data.error || 'Accesso fallito';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  showLoggedAccountView(data.user);
+});
+
+async function showLoggedAccountView(user) {
+  document.getElementById('account-guest-view').classList.add('hidden');
+  document.getElementById('account-logged-view').classList.remove('hidden');
+  document.getElementById('account-name').textContent = user.name || user.email;
+
+  const listEl = document.getElementById('account-appointments-list');
+  listEl.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem">Caricamento...</p>';
+
+  const { ok, data } = await apiCall('/api/account-appointments.php');
+
+  if (!ok) {
+    listEl.innerHTML = '<p style="color:var(--danger);font-size:.85rem">Errore nel caricamento delle prenotazioni.</p>';
+    return;
+  }
+
+  const appts = data.appointments || [];
+
+  if (appts.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem">Non hai ancora nessuna prenotazione.</p>';
+    return;
+  }
+
+  listEl.innerHTML = appts.map(a => {
+    const slot = a.slots || {};
+    const dateLabel = slot.slot_date ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+    return `
+      <div class="account-appt-card">
+        <strong>${dateLabel}${slot.slot_time ? ' · ' + slot.slot_time.slice(0,5) : ''}</strong><br>
+        ${a.service ? a.service + '<br>' : ''}
+        <a href="/api/ical-customer.php?id=${a.id}" target="_blank" rel="noopener">📅 Aggiungi al calendario</a>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('account-logout-btn').addEventListener('click', async () => {
+  await apiCall('/api/account-logout.php', 'POST');
+  document.getElementById('account-email').value = '';
+  document.getElementById('account-password').value = '';
+  document.getElementById('account-guest-view').classList.remove('hidden');
+  document.getElementById('account-logged-view').classList.add('hidden');
 });

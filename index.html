@@ -14,6 +14,10 @@
     <section class="booking" id="booking">
         <div class="booking__container">
 
+            <div class="account-bar hidden" id="account-bar">
+                <button class="account-link" id="account-nav-btn">🔑 Il mio account</button>
+            </div>
+
             <!-- Indicatore step: nascosto finché non si sblocca l'accesso -->
             <div class="step-indicator hidden" id="step-indicator" aria-label="Progresso prenotazione">
                 <div class="step-indicator__item active" data-step="1">
@@ -188,6 +192,33 @@
                         <button class="btn btn--outline" id="new-booking-btn">
                             Fai un'altra prenotazione
                         </button>
+                    </div>
+                </div>
+
+                <!-- ─── STEP ACCOUNT: Il mio account ─── -->
+                <div class="step hidden" id="step-account">
+                    <div class="step__header">
+                        <button class="btn--back" id="account-back-btn">← Torna alla prenotazione</button>
+                        <h2>Il mio account</h2>
+                    </div>
+
+                    <div id="account-guest-view" class="form">
+                        <div class="form__group">
+                            <label for="account-email">Email</label>
+                            <input type="email" id="account-email" autocomplete="username">
+                        </div>
+                        <div class="form__group">
+                            <label for="account-password">Password</label>
+                            <input type="password" id="account-password" autocomplete="current-password">
+                        </div>
+                        <div class="form__error-global hidden" id="account-login-error"></div>
+                        <button class="btn btn--primary btn--full" id="account-login-btn">Accedi →</button>
+                    </div>
+
+                    <div id="account-logged-view" class="hidden">
+                        <p style="color:var(--text-muted);margin-bottom:16px">Bentornato, <strong id="account-name" style="color:var(--gold-light)"></strong></p>
+                        <div id="account-appointments-list"></div>
+                        <button class="btn btn--outline btn--full" id="account-logout-btn" style="margin-top:20px">Esci</button>
                     </div>
                 </div>
 

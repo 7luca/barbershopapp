@@ -18,6 +18,16 @@ if ($email === '' || $password === '') {
     exit;
 }
 
+function setCustomerCookie(string $accessToken): void {
+    setcookie(CUSTOMER_COOKIE_NAME, $accessToken, [
+        'expires' => time() + 3600,
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Strict',
+        'secure' => true
+    ]);
+}
+
 if ($action === 'signup') {
     [$status, $data] = authRequest('signup', ['email' => $email, 'password' => $password]);
 
@@ -30,6 +40,7 @@ if ($action === 'signup') {
     // Se "Confirm email" è disattivato su Supabase, la risposta include già un access_token:
     // l'utente è di fatto loggato e può procedere subito con la prenotazione.
     if (isset($data['access_token']) && isset($data['user'])) {
+        setCustomerCookie($data['access_token']);
         echo json_encode([
             'success' => true,
             'session' => true,
@@ -47,14 +58,15 @@ if ($action === 'signup') {
 }
 
 if ($action === 'login') {
-    $url = 'token?grant_type=password';
-    [$status, $data] = authRequest($url, ['email' => $email, 'password' => $password]);
+    [$status, $data] = authRequest('token?grant_type=password', ['email' => $email, 'password' => $password]);
 
     if ($status >= 400 || !isset($data['access_token'])) {
         http_response_code(401);
         echo json_encode(['error' => 'Credenziali non valide']);
         exit;
     }
+
+    setCustomerCookie($data['access_token']);
 
     echo json_encode([
         'success' => true,

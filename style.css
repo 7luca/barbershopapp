@@ -79,6 +79,20 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 700; margin: 0; }
 
 .booking__container { width: 100%; max-width: 520px; }
 
+.account-bar { text-align: right; margin-bottom: 12px; }
+.account-link {
+  background: none; border: none; color: var(--text-muted); font-size: 0.8rem;
+  cursor: pointer; font-family: var(--font-sans); padding: 6px;
+}
+.account-link:hover { color: var(--gold-light); }
+
+.account-appt-card {
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 10px; font-size: 0.85rem;
+}
+.account-appt-card strong { color: var(--gold-light); }
+.account-appt-card a { color: var(--gold-light); font-size: 0.78rem; text-decoration: none; }
+
 .step-indicator {
   display: flex;
   align-items: center;

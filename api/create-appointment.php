@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/supabase.php';
+require_once __DIR__ . '/emails.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -23,13 +24,15 @@ if ($slotId === '' || $name === '' || $phone === '') {
     exit;
 }
 
-[$checkStatus, $slotData] = restRequest('GET', 'slots?id=eq.' . urlencode($slotId) . '&select=id,is_booked,is_open', null, true);
+[$checkStatus, $slotData] = restRequest('GET', 'slots?id=eq.' . urlencode($slotId) . '&select=id,is_booked,is_open,slot_date,slot_time', null, true);
 
 if ($checkStatus !== 200 || empty($slotData) || $slotData[0]['is_booked'] === true || $slotData[0]['is_open'] === false) {
     http_response_code(409);
     echo json_encode(['error' => 'Questo orario non è più disponibile, scegline un altro']);
     exit;
 }
+
+$slot = $slotData[0];
 
 $insertBody = [
     'slot_id' => $slotId,
@@ -49,7 +52,19 @@ if ($status !== 201 && $status !== 200) {
     exit;
 }
 
+$appointmentId = $data[0]['id'] ?? null;
+
+// Invio email di conferma (best-effort: se fallisce non blocca la prenotazione)
+if ($email !== '' && $appointmentId) {
+    $icsUrl = APP_BASE_URL . '/api/ical-customer.php?id=' . $appointmentId;
+    try {
+        sendBookingConfirmationEmail($email, $name, $slot['slot_date'], $slot['slot_time'], $service, $icsUrl);
+    } catch (Throwable $e) {
+        // ignorato volutamente
+    }
+}
+
 echo json_encode([
     'success' => true,
-    'appointment_id' => $data[0]['id'] ?? null
+    'appointment_id' => $appointmentId
 ]);

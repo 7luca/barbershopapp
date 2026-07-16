@@ -127,6 +127,29 @@ function requireAdmin(): array {
 }
 
 /**
+ * Verifica che il cliente (dato il token nel cookie) abbia una sessione valida.
+ * Termina la richiesta con 401 se non lo è. Restituisce i dati utente Supabase.
+ */
+function requireCustomer(): array {
+    $token = $_COOKIE[CUSTOMER_COOKIE_NAME] ?? null;
+
+    if (!$token) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Non autenticato']);
+        exit;
+    }
+
+    $user = getUserFromToken($token);
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Sessione scaduta, effettua di nuovo il login']);
+        exit;
+    }
+
+    return $user;
+}
+
+/**
  * Legge il body JSON di una richiesta POST
  */
 function readJsonBody(): array {
